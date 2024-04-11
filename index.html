@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSP</title>
+</head>
+<body>
+
+<h1>Assignment 1</h1>
+<h2>Problem 1</h2>
+<p>
+<div style="white-space: pre-wrap">
+L=input("Enter the length:-"); 
+A=input("Enter the amplitude:-"); 
+w0=input("Enter the angular frequency:-"); 
+phi=input("Enter the phase:-"); 
+fs=20000; 
+n=0:1/fs:L; 
+x=A*cos(w0*n+phi); 
+stem(n,x); 
+title('Plot of the sinusoidal signal.'); 
+xlabel("n"); 
+ylabel("x[n]"); 
+</div>
+</p>
+
+<h2>Problem 2</h2>
+<p>
+<div style="white-space: pre-wrap">
+n=0:1:100; 
+s=2*n.*((0.9).^n); 
+figure(1); 
+stem(n,s,"Linewidth",2); 
+title('Plot of the original uncorrupted signal.'); 
+xlabel("n"); 
+ylabel("s[n]"); 
+d=randi([-5,5],1,length(s))/10; 
+figure(2); 
+stem(n,d,"Linewidth",2); 
+title('Plot of the noise signal.'); 
+xlabel("n"); 
+ylabel("d[n]"); 
+x=d+s; 
+figure(3); 
+stem(n,x,"Linewidth",2); 
+title('Plot of the noise corrupted signal.'); 
+xlabel("n"); ylabel("x[n]"); 
+f=4; 
+for m=5:2:9 
+y=zeros(size(x)); 
+for i=0:m-1 
+for j=1:m-1 
+if (j-i)>0 
+y(j)=y(j)+x(j-i); 
+end 
+end 
+for j=m:100 
+y(j)=y(j)+x(j-i); 
+end
+end 
+y=y/m; 
+figure(f); 
+stem(n,y,"Linewidth",2); 
+str=sprintf('Plot of the filtered signal with m=%d.',m); 
+title(str); 
+xlabel("n"); 
+ylabel("y[n]"); 
+f=f+1;
+end 
+</div>
+</p>
+
+<h2>Problem 3</h2>
+<p>
+<div style="white-space: pre-wrap">
+n=0:1:50; 
+a=100; 
+x=a*ones(size(n)); 
+x=[0 x]; 
+y=zeros(size(n)); 
+y=[1 y]; 
+for i=2:52; 
+y(i)=0.5*(y(i-1) +(x(i)./y(i-1))); 
+end; 
+figure(1); 
+stem(n,x(2:52),'Linewidth',2); 
+title('Plot of the input signal.'); 
+xlabel("n"); 
+ylabel("x[n]"); 
+figure(2); 
+stem(n,y(2:52),'Linewidth',2); 
+title('Plot of the output signal.'); 
+xlabel("n"); 
+ylabel("x[n]"); 
+hold on 
+plot(n,a^0.5*ones(size(n)),'Linewidth',2); 
+legend('y[n]','Root of a'); 
+</div>
+</p>
+
+<h2>Problem 4</h2>
+<p>
+<div style="white-space: pre-wrap">
+load mtlb; 
+x=mtlb; 
+t=(0:(length(x)-1))/Fs; 
+figure(1); 
+plot(t,x); 
+title('Original speech signal');xlabel('Time');ylabel('Audio Signal'); 
+for j=1:50 
+b(j)=j; 
+delta=(max(x)-min(x))/(2^j); 
+Q=round(x/delta)*delta; 
+ps=rms(x)^2; 
+pn=rms(x-Q)^2; 
+sqnr(j)=10*log10(ps/pn); 
+end 
+figure(2); 
+plot(b,sqnr,"-o","LineWidth",2); 
+title('SQNR versus bits per sample.'); 
+xlabel('Bits per sample.'); 
+ylabel('SQNR(dB).');
+
+</div>
+</p>
+
+<h1>Assignment 2</h1>
+<h2>Problem 1</h2>
+<p>
+<div style="white-space: pre-wrap">
+M=10;
+A=10;
+x=[zeros(1,length(-5:-1)) A*ones(1,length(0:M-1)) zeros(1,length(M:M+4))];
+n=-5:M+4;
+figure(1);
+stem(n,x,"Linewidth",2);
+N=100;
+w=-pi:(2*pi/N):pi;
+X=[x zeros(1,(N-length(x)))];
+y=zeros(1,length(w));
+for i=1:length(w)
+   temp = 0;
+   for j=1:N
+temp=temp+X(j)*exp(-sqrt(-1)*w(i)*(j-1));
+   end
+   y(i)=temp;
+end
+
+m=abs(y);
+p=unwrap(angle(y));
+figure;
+subplot(2,1,1);
+stem(w,m,"Linewidth",1.5);
+str=sprintf("Magnitude spectrum for N=%d",N);
+title(str);
+subplot(2,1,2);
+stem(w,p,"Linewidth",1.5);
+str=sprintf("Phase spectrum for N=%d",N);
+title(str);
+
+</div>
+</p>
+
+<h2>Problem 2</h2>
+<p>
+<div style="white-space: pre-wrap">
+n=-8:7;
+n2=-16:15;
+n3=-64:63;
+
+for a=1:3
+h=sin(0.5*pi*n)./(pi*n);
+h(abs(n(1))+1) = 0.5;
+figure(a);
+subplot(3,1,1)
+stem(n,h,'r',"LineWidth",2);
+title('Plot of h with n');
+
+h=@(k)(k~=0).*(sin(0.5*pi*k)./(pi*k+eps))+(k==0)*0.5;
+N=2^nextpow2(length(h(n)));
+w=-pi:2*pi/N:pi;
+x=[h(n) zeros(1, (N-length(h(n))))];
+y=zeros(1,length(w));
+
+for i=1:length(w)
+   temp=0;
+   for j=1:N
+temp=temp+x(j)*exp(-(sqrt(-1))*w(i)*(j-1));
+   end
+   y(i)=temp;
+end
+m=abs(y); 
+p=unwrap(angle(y)); 
+
+subplot(3,1,2);
+stem(w,m,"LineWidth",2);
+title('Magnitude Response')
+subplot(3,1,3)
+stem(w,p,"LineWidth",2);
+title('Phase Response')
+
+if(a==1)
+   n=n2;
+else
+   n=n3;
+end
+end
+</div>
+</p>
+
+<h2>Problem 3</h2>
+<p>
+<div style="white-space: pre-wrap">
+rec=audiorecorder;
+recordblocking(rec,10);
+x=getaudiodata(rec);
+fs=8000;
+t=(0:(length(x)-1))/fs;
+
+figure(1)
+plot(t,x);
+title('Plot of original audio Signal');
+xlabel('Time');
+ylabel('Amplitude');
+y=fft(x);
+l=length(x);
+p2=abs(y/l);
+p1=p2(1:l/2+1);
+f=fs*(0:l/2)/l;
+figure(2);
+plot(f,p1);
+title('Single-Sided Amplitude Spectrum of voice signal');
+xlabel('Frequency(Hertz)');
+ylabel('|P(f)|');
+</div>
+</p>
+
+<h2>Problem 4</h2>
+<p>
+<div style="white-space: pre-wrap">
+f = [1 2 3 4 5];
+g = [6 7 8 9 10];
+n = 1:5;
+
+figure(1);
+subplot(2,1,1);
+stem(n,f,"Linewidth",2);
+title("First function.")
+
+subplot(2,1,2);
+stem(n,g,"Linewidth",2);
+title("Second function.")
+N=2^nextpow2(max([length(f) length(g)]));
+f_h=[f zeros(1,N-length(f))];
+g_h=[g zeros(1,N-length(g))];
+
+w=-pi:2*pi/N:pi;
+yf=zeros(size(w));
+yg=zeros(size(w));
+
+for i=1:length(w)
+   temp_f=0;
+   temp_g=0;
+   for j=1:N
+temp_f=temp_f+f_h(j)*exp(-(sqrt(-1))*w(i)*(j-1));
+temp_g=temp_g+g_h(j)*exp(-(sqrt(-1))*w(i)*(j-1));
+   end
+   yf(i)=temp_f;
+   yg(i)=temp_g;
+end
+
+yx=yf.*yg;
+x=zeros(1,length(f)+length(g)-1);
+
+for i=1:length(yx)
+   temp = 0;
+   for j=1:N
+temp=temp+(1/N)*yx(j)*exp((sqrt(-1))*w(j)*(i-1));
+   end
+   x(i) = temp;
+end
+
+c=conv(f,g);
+
+figure;
+subplot(2,1,1);
+stem(x,"Linewidth",2);
+title('Convolution of f and g by DFT method.')
+subplot(2,1,2);
+stem(c,"Linewidth",2);
+
+title('Direct Linear Convolution of f and g')
+</div>
+</p>
+
+<h2>Problem 5</h2>
+<p>
+<div style="white-space: pre-wrap">
+x=rand(1,50);         
+h=5;
+l=100;
+n1=length(x);
+m=length(h);
+c=conv(x,h);
+x=[x zeros(1,mod(-n1,l))];
+N2=length(x);
+h=[h zeros(1,l-1)];
+H=fft(h,l+m-1);
+S=N2/l;
+index=1:l;
+X=[zeros(m-1)];
+for s=1:S
+   xm=[x(index) zeros(1,m-1)];          
+   X1=fft(xm,l+m-1);
+   Y=X1.*H;
+   Y=ifft(Y);
+   Z=X((length(X)-m+2):length(X))+Y(1:m-1);   
+   X=[X(1:(s-1)*l) Z Y(m:m+l-1)];
+   index=s*l+1:(s+1)*l;
+end
+i=1:n1+m-1;
+X=X(i); 
+subplot(2,1,1)
+stem(c,"Linewidth",2);
+title('Convolution using the conv() function of MATLAB')
+subplot(2,1,2)
+stem(X,"Linewidth",2);
+title('Convolution using Overlap Add Method')
+</div>
+</p>
+
+<h1>Assignment 3</h1>
+<h2>Problem 1</h2>
+<p>
+<div style="white-space: pre-wrap">
+WINDOW="Rectangular";
+%%"Hamming","Hanning","Blackman" 
+for n=[21,41] 
+window=rectwin(n)
+%%hamming(n),hann(n),blackman(n)
+fc=2000; 
+fs=8000; 
+nr=fs/2; 
+Wn=fc/nr; 
+d=fir1(n-1,Wn,"low",window); 
+[h,w]=freqz(d); 
+figure() 
+subplot(2,1,1); 
+plot(w/pi,20*log10(abs(h)),"Linewidth",2); 
+title(["Magnitude response for",WINDOW,"Window of order = ",n]); 
+subplot(2,1,2); 
+plot(w/pi, angle(h),"Linewidth",2); 
+title(["Phase response for",WINDOW,"Window of order = ",n]); 
+end 
+</div>
+</p>
+
+<h2>Problem 2</h2>
+<p>
+<div style="white-space: pre-wrap">
+WINDOW="Rectangular";
+%%"Hamming","Hanning","Blackman" 
+for n=[21,41] 
+window=rectwin(n)
+%%hamming(n),hann(n),blackman(n)] 
+fcl=2500; 
+fch=3000; 
+fs=8000; 
+nr=fs/2; 
+Wn=[fcl/nr,fch/nr]; 
+d=fir1(n-1,Wn,"bandpass",window); 
+[h,w]=freqz(d); 
+figure() 
+subplot(2,1,1); 
+plot(w/pi,20*log10(abs(h)),"Linewidth",2); 
+title(["Magnitude response for",WINDOW,"Window of order = ",n]); 
+subplot(2,1,2); 
+plot(w/pi, angle(h),"Linewidth",2); 
+title(["Phase response for",WINDOW,"Window of order = ",n]); 
+end 
+</div>
+</p>
+
+<h2>Problem 3</h2>
+<p>
+<div style="white-space: pre-wrap">
+i=1; 
+for n=[21,41] 
+fc=2000; 
+fs=8000; 
+nr=fs/2; 
+Wn=fc/nr; 
+f=[0 Wn Wn 1]; 
+m=[1 1 0 0]; 
+b=fir2(n-1,f,m) 
+[h,w]=freqz(b); 
+figure(i) 
+subplot(2,1,1); 
+plot(w/pi,20*log10(abs(h)),"Linewidth",2); 
+title(["Magnitude response for filter of length ",n]); 
+subplot(2,1,2); 
+plot(w/pi, angle(h),"Linewidth",2); 
+title(["Phase response for filter of length ",n]); 
+i=i+1; 
+end 
+</div>
+</p>
+
+<h2>Problem 4</h2>
+<p>
+<div style="white-space: pre-wrap">
+i=1; 
+for n=[21,41] 
+flo=2500; 
+fhi=3000; 
+fs=8000; 
+nr=fs/2; 
+f=[0 flo/nr-0.1 flo/nr fhi/nr fhi/nr+0.1 1]; 
+m=[0 0 1 1 0 0]; 
+b=fir2(n-1,f,m) 
+[h,w]=freqz(b); 
+figure(i) 
+subplot(2,1,1); 
+plot(w/pi,20*log10(abs(h)),"Linewidth",2); 
+title(["Magnitude response for filter of length ",n]); 
+subplot(2,1,2); 
+plot(w/pi, angle(h),"Linewidth",2); 
+title(["Phase response for filter of length ",n]); 
+i=i+1; 
+end 
+</div>
+</p>
+
+<h1>Assignment 4</h1>
+<h2>Problem 1</h2>
+<p>
+<div style="white-space: pre-wrap">
+w = 0:pi/255:pi; 
+% For Single Stage Realization 
+num1=[1 1]/1.5267; % the /1.5267 is to make static gain = 1 (0 dB) 
+den1=[1 0.45]; % Since 0.45pi is given as cutoff frequency 
+num=num1; 
+den=den1; 
+h1 = freqz(num, den, w); 
+g1 = 20*log10(abs(h1)); 
+subplot(1,2,1) 
+plot(w/pi,g1,"Linewidth",2); 
+grid minor; axis ([0 1 -100 5]); 
+xlabel("\omega /\pi");ylabel("Gain in dB"); 
+title("Single stage realization"); 
+for i=1:3 % For cascaded realization 
+num = conv (num,num1); 
+den = conv (den,den1); 
+end 
+h1 = freqz(num, den, w); 
+g1 = 20*log10(abs(h1)); 
+subplot(1,2,2) 
+plot(w/pi,g1,"Linewidth",2); % PLOT CODE For Cascaded version 
+grid minor; axis ([0 1 -100 5]); 
+xlabel("\omega /\pi");ylabel("Gain in dB"); 
+title("Cascaded realization"); 
+</div>
+</p>
+
+<h2>Problem 2</h2>
+<p>
+<div style="white-space: pre-wrap">
+% Determining the order of the designed analog filter 
+iir = designfilt('lowpassiir','DesignMethod','butter','SampleRate',80e+3, ... 
+'PassbandFrequency',4e+3,'StopbandFrequency',20e+3, ... 
+'PassbandRipple',0.5,'StopbandAttenuation',45); 
+order = filtord(iir); 
+fc = 4e+3; 
+fs = 80e+3; 
+[b,a] = butter(order, fc/(fs/2)); 
+% Implementing the Impulse Invariance Method 
+[bz,az] = impinvar(b,a,fs); 
+freqz(bz,az,1024,fs); 
+title("Butterworth Low Pass Filter"); 
+</div>
+</p>
+
+<h2>Problem 3</h2>
+<p>
+<div style="white-space: pre-wrap">
+% Determining the order of the designed analog filter 
+iir=designfilt('lowpassiir','DesignMethod','butter','SampleRate',80e+3, ... 
+'PassbandFrequency',4e+3,'StopbandFrequency',20e+3, ... 
+'PassbandRipple',0.5,'StopbandAttenuation',45); 
+n = filtord(iir); 
+f = 4e+3; 
+fs = 80e+3; 
+[z,p,k] = butter(n,2*pi*f,'s'); 
+[num,den] = zp2tf(z,p,k); 
+[h,w] = freqs(num,den,4096); 
+figure(1); 
+plot(w/(2*pi),mag2db(abs(h))) 
+hold on; 
+[l1,l2] = meshgrid(f,[-120 0]); 
+plot(l1,l2); 
+grid minor; 
+legend('Magnitude response','Passband Edge'); 
+xlabel('Frequency (Hz)'); 
+ylabel('Magnitude (dB)'); 
+[numd,dend] = bilinear(num,den,fs,f);% Employing the bilinear transformation method 
+fvtool(numd,dend,'fs',fs); 
+
+close all; 
+load handel; %%Using a .wav file. 
+t=(0:length(y)-1)/Fs; 
+out=filter(coefficients,1,y); %%Using the preloaded coefficients from fdatool. 
+subplot(2,1,1); 
+figure(1) 
+plot(t,y) 
+title('Original Signal'); 
+subplot(2,1,2); 
+plot(t,out); 
+title('Lowpass Filtered Signal'); 
+xlabel('Time (s)'); 
+ylim([-1 1]); 
+figure(2) 
+freqz(out); 
+
+</div>
+</p>
+    
+</body>
+</html>
