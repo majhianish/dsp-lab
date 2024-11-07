@@ -943,6 +943,220 @@ num2str(ws), 'x', num2str(ws), ')']);
 end
    </div>
 </p>
+
+    <h2>Write a code to implement JPEG image compression operation of an 8- bit grayscale image using standard JPEG quantization table.</h2>
+<p><div style="white-space: pre-wrap;">
+   clc,clear all;
+   I =uint8(rgb2gray(imread('/MATLAB Drive/DIP/Exp6/download.jpeg')));
+   I=imresize(I,[256,256]);
+   I1=I;
+   [row ,coln]= size(I);
+   I= double(I);
+   % Subtracting each image pixel value by 128
+   I = I - (128*ones(256,256));
+   quality = input('What quality of compression you require - ');
+   % Quality Matrix Formulation
+   Q50 = [ 16 11 10 16 24 40 51 61;
+   12 12 14 19 26 58 60 55;
+   14 13 16 24 40 57 69 56;
+   14 17 22 29 51 87 80 62;
+   18 22 37 56 68 109 103 77;
+   24 35 55 64 81 104 113 92;
+   49 64 78 87 103 121 120 101;
+   72 92 95 98 112 100 103 99];
+   if quality > 50
+   QX = round(Q50.*(ones(8)*((100-quality)/50)));
+   QX = uint8(QX);
+   elseif quality < 50
+   QX = round(Q50.*(ones(8)*(50/quality)));
+   QX = uint8(QX);
+   elseif quality == 50
+   QX = Q50;
+   end
+   % Formulation of forward DCT Matrix and inverse DCT matrix
+   DCT_matrix8 = dct(eye(8));
+   iDCT_matrix8 = DCT_matrix8'; %inv(DCT_matrix8);
+   % Jpeg Compression
+   dct_restored = zeros(row,coln);
+   QX = double(QX);
+   % Jpeg Encoding
+   % Forward Discret Cosine Transform
+   for i1=[1:8:row]
+   for i2=[1:8:coln]
+   zBLOCK=I(i1:i1+7,i2:i2+7);
+   win1=DCT_matrix8*zBLOCK*iDCT_matrix8;
+   dct_domain(i1:i1+7,i2:i2+7)=win1;
+   end
+   
+   end
+   % Quantization of the DCT coefficients
+   for i1=1:8:row
+   for i2=1:8:coln
+   win1 = dct_domain(i1:i1+7,i2:i2+7);
+   win2=round(win1./QX);
+   dct_quantized(i1:i1+7,i2:i2+7)=win2;
+   end
+   end
+   % Jpeg Decoding
+   % Dequantization of DCT Coefficients
+   for i1=1:8:row
+   for i2=1:8:coln
+   win2 = dct_quantized(i1:i1+7,i2:i2+7);
+   win3 = win2.*QX;
+   dct_dequantized(i1:i1+7,i2:i2+7) = win3;
+   end
+   end
+   % Inverse DISCRETE COSINE TRANSFORM
+   for i1=1:8:row
+   for i2=1:8:coln
+   win3 = dct_dequantized(i1:i1+7,i2:i2+7);
+   win4=iDCT_matrix8*win3*DCT_matrix8;
+   dct_restored(i1:i1+7,i2:i2+7)=win4;
+   end
+   end
+   I2=dct_restored;
+   K=mat2gray(I2);
+   figure(1);imshow(I1);title('original image');
+   figure(2);imshow(K);title('restored image from dct');
+</div></p>
+
+<h2>Write a code to implement arithmetic coding and decoding. </h2>
+<p><div style="white-space: pre-wrap;">
+   close all;
+clear all;
+clc;
+% Read the image and resize
+I =rgb2gray(imread('/MATLAB Drive/DIP/Exp6/decoded.JPG'));
+I = imresize(I, [3 NaN]); % Resizing for easier handling
+% Determine if image is grayscale or RGB
+if size(I, 3) == 3
+disp('The image is RGB.');
+else
+disp('The image is Grayscale.');
+disp('The pixel values are:');
+disp(I);
+subplot(1,2,1);
+imshow(uint8(I));
+title('Original image');
+% Convert the image from 2D (or 3D for RGB) to 1D array
+str = I(:)'; % Flatten image directly to 1D, no transpose needed
+% Length of the flattened image array
+len = length(str);
+fprintf('The length of the string is : %d\n', len);
+u = unique(str);
+disp('The unique symbols/characters are:');
+disp(u);
+len_unique = length(u);
+fprintf('The length of unique character string is : %d\n', len_unique);
+z = zeros(1, len_unique);
+p = zeros(1, len_unique);
+for i = 1 : len_unique
+z(i) = length(find(str == u(i))); % Count occurrences
+p(i) = z(i) / len; % Probability of each symbol
+end
+display(z); % Frequency counts
+display(p); % Probabilities
+cpr = cumsum(p);
+newcpr = [0 cpr]; % Start from 0
+display(cpr);
+display(newcpr);
+table = zeros(len_unique, 2);
+for i = 1 : len_unique
+table(i, 1) = newcpr(i); % First column: lower range
+table(i, 2) = cpr(i); % Second column: upper range
+end
+% Display the lookup table
+disp('The lookup table is:');
+disp(table);
+LL = 0;
+UL = 1;
+for i = 1 : len
+for j = 1 : len_unique
+% Match symbol in unique array
+if str(i) == u(j)
+pos = j;
+% Update the range
+
+diff_range = UL - LL;
+UL = LL + (diff_range * table(pos, 2));
+LL = LL + (diff_range * table(pos, 1));
+
+break;
+end
+end
+end
+% Final tag (encoded value)
+tag = LL;
+disp('Encoded tag value:');
+decoded_str = [];
+for i = 1 : len
+for j = 1 : len_unique
+% Check if the tag falls within the current range
+if (tag >= table(j, 1) && tag < table(j, 2))
+
+pos = j;
+
+% Update the tag for the next iteration
+
+tag = (tag - table(pos, 1)) / p(j);
+
+% Add the decoded symbol to the output
+decoded_str = [decoded_str u(pos)];
+
+break;
+end
+end
+end
+% Display the decoded image pixel values
+disp('Decoded pixel values:');
+disp(decoded_str);
+DD = uint8(decoded_str);
+Restore = reshape(DD, size(I)); % Reshape it back to the original size
+% Display the decoded image
+subplot(1,2,2);
+imshow(Restore);
+title('Decoded Image');
+</div></p>
+
+<h2>Write a code to implement Huffman coding.</h2>
+<p><div style="white-space: pre-wrap;">
+   imagePath = '/MATLAB Drive/DIP/Exp6/download.jpeg';
+img = imread(imagePath);
+if size(img, 3) == 3
+img = rgb2gray(img); % Convert to grayscale if it's a color image
+end
+% Get the image size
+[rows, cols] = size(img);
+% Flatten the image into a 1D array
+img_vector = img(:);
+% Find symbol probabilities (for 8-bit image, possible values 0-255)
+symbol_counts = histcounts(img_vector, 0:256);
+symbols = (0:255)';
+% Remove zero counts and corresponding symbols
+valid_symbols = symbols(symbol_counts > 0);
+valid_counts = symbol_counts(symbol_counts > 0);
+
+% Normalize counts to get symbol probabilities
+probabilities = valid_counts / sum(valid_counts);
+% Generate the Huffman dictionary using `huffmandict`
+huffman_dict = huffmandict(valid_symbols, probabilities);
+% Perform Huffman encoding on the image vector
+huffman_encoded = huffmanenco(img_vector, huffman_dict);
+disp('Huffman encoding complete.');
+% Perform Huffman decoding to reconstruct the image
+huffman_decoded_vector = huffmandeco(huffman_encoded, huffman_dict);
+% Reshape the decoded image back to its original size
+decoded_img = reshape(huffman_decoded_vector, [rows, cols]);
+% Display original and decoded images
+figure;
+subplot(1, 2, 1);
+imshow(img);
+title('Original Image');
+subplot(1, 2, 2);
+imshow(uint8(decoded_img));
+title('Decoded Image');
+</div></p>
+
     
 </body>
 </html>
